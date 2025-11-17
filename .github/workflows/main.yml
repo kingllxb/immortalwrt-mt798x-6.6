@@ -1,0 +1,26 @@
+name: Build Netcore N60 Firmware
+on:
+  push: # 代码推送时自动触发
+    branches: [main]
+  workflow_dispatch: # 允许手动触发
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Set up Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libncurses-dev zlib1g-dev gawk git gettext libssl-dev xsltproc rsync wget unzip python3 xz-utils
+    - name: Configure and Compile
+      run: |
+        cd $GITHUB_WORKSPACE
+        make clean
+        make menuconfig <<< '$(printf "MT7986\nnetcore_n60\n")' # 自动选择芯片和型号
+        make -j$(nproc) V=s
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware
+        path: bin/targets/mediatek/mt7986/immortalwrt-mediatek-mt7986-netcore_n60-*.bin
